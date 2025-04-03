@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import API from '../lib/api'; // Adjust the import path as necessary
+import Loading from '@/components/Loading';
 
 const Home = () => {
     const [quizzes, setQuizzes] = useState([]);
@@ -27,7 +28,7 @@ const Home = () => {
         <div className="container mx-auto p-4">
             <h1 className="text-3xl font-bold mb-6">Quizzes</h1>
             {loading ? (
-                <p>Loading...</p>
+                <Loading />
             ) : quizzes.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2">
                     {quizzes.map((quiz) => (

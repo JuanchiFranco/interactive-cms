@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import API from '../../lib/api';
+import Loading from '@/components/Loading';
 
 const Quiz = () => {
   const router = useRouter();
@@ -46,36 +47,46 @@ const Quiz = () => {
     alert(`Tu puntuación es ${score} de ${totalQuestions} (${percentage}%)`);
   };
 
-  if (!quiz) return <p>Cargando...</p>;
+  if (!quiz) return <Loading />;
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">{quiz.title}</h1>
-      {quiz.questions.map((question) => (
-        <div key={question.id} className="mb-4 p-4 border rounded">
-          <h2 className="text-xl font-semibold mb-2">
-            {question.question}
-          </h2>
-          {question.options.map((option, index) => (
-            <label key={index} className="block">
-              <input
-                type="radio"
-                name={`question-${question.id}`}
-                value={option}
-                onChange={() => handleAnswer(question.id, option)}
-                className="mr-2"
-              />
-              {option}
-            </label>
-          ))}
+      {quiz.questions.length === 0 ? (
+        <p>No hay preguntas disponibles.</p>
+      ) : (
+        // mapeamos las preguntas y opciones
+        <div>
+            {quiz.questions.map((question) => (
+                <div key={question.id} className="mb-4 p-4 border rounded">
+                <h2 className="text-xl font-semibold mb-2">
+                    {question.question}
+                </h2>
+                {question.options.map((option, index) => (
+                    <label key={index} className="block">
+                    <input
+                        type="radio"
+                        name={`question-${question.id}`}
+                        value={option}
+                        onChange={() => handleAnswer(question.id, option)}
+                        className="mr-2"
+                    />
+                    {option}
+                    </label>
+                ))}
+                </div>
+            ))}
+            <div className="flex items-center justify-center">
+                <button
+                    onClick={handleSubmit}
+                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+                >
+                    Enviar Respuestas
+                </button>
+            </div>
+            
         </div>
-      ))}
-      <button
-        onClick={handleSubmit}
-        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
-      >
-        Enviar Respuestas
-      </button>
+      )}
     </div>
   );
 };
