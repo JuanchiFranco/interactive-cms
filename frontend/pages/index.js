@@ -31,7 +31,7 @@ const Home = () => {
             ) : quizzes.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2">
                     {quizzes.map((quiz) => (
-                        <Link key={quiz.id} href={`/quizzes/${quiz.id}`}>
+                        <Link key={quiz.id} href={`/quiz/${quiz.documentId}`} className="block">
                             <div className="block p-4 border rounded hover:shadow-lg transition">
                                 <h2 className="text-2xl font-semibold">{quiz.title}</h2>
                                 <p>{quiz.description}</p>
