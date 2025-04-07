@@ -7,14 +7,13 @@ const Quiz = () => {
   const router = useRouter();
   const { id } = router.query;
   const [quiz, setQuiz] = useState(null);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState([]);
 
   useEffect(() => {
     if (!id) return;
     const fetchQuiz = async () => {
       try {
         const res = await API.get(`/quizzes/${id}?populate=questions`);
-        console.log('Quiz data:', res.data); // Debugging line
         setQuiz(res.data);
       } catch (error) {
         console.error('Error al cargar el quiz:', error);
@@ -24,7 +23,19 @@ const Quiz = () => {
   }, [id]);
 
   const handleAnswer = (questionId, answer) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: answer }));
+    // Actualizamos el estado de las respuestas, en este formato: [{ questionId: questionId, answer: answer }, { questionId: questionId, answer: answer }, etc.]
+    setAnswers((prevAnswers) => {
+      const existingAnswerIndex = prevAnswers.findIndex(
+        (item) => item.questionId === questionId
+      );
+      if (existingAnswerIndex !== -1) {
+        const updatedAnswers = [...prevAnswers];
+        updatedAnswers[existingAnswerIndex].answer = answer;
+        return updatedAnswers;
+      } else {
+        return [...prevAnswers, { questionId, answer }];
+      }
+    });
   };
 
   const handleSubmit = async () => {
@@ -34,17 +45,27 @@ const Quiz = () => {
       return;
     }
 
-    // comparamos las respuestas con la respuesta correcta
-    const correctAnswers = quiz.questions.map((question) => question.isCorrect);
-    const userAnswers = Object.values(answers);
-    const score = userAnswers.reduce((acc, answer, index) => {
-      return acc + (answer === correctAnswers[index] ? 1 : 0);
-    }, 0);
-
-    const totalQuestions = quiz.questions.length;
-    const percentage = (score / totalQuestions) * 100;
-
-    alert(`Tu puntuación es ${score} de ${totalQuestions} (${percentage}%)`);
+    // hacemos una petición POST a la API para enviar las respuestas
+    try {
+      const response = await API.post(`/quizzes/${id}`, {
+        answers: answers.map((item) => ({
+          questionId: item.questionId,
+          answer: item.answer,
+        })),
+      });
+      if (!response.data) {
+        alert('Error al enviar respuestas. Por favor, inténtalo de nuevo.');
+        return;
+      }
+      let { correctAnswers, incorrectAnswers } = response.data.data;
+      // Calculamos la puntuación
+      let score = correctAnswers.length;
+      let incorrectScore = incorrectAnswers.length;
+      // Mostramos la puntuación al usuario en un alert
+      alert(`Puntuación: ${score} respuestas correctas y ${incorrectScore} incorrectas.`);
+    } catch (error) {
+      console.error('Error al enviar respuestas:', error);
+    }
   };
 
   if (!quiz) return <Loading />;

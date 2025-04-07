@@ -12,7 +12,6 @@ const Home = () => {
             try {
                 const response = await API.get('/quizzes'); // Adjust the endpoint as necessary
                 setQuizzes(response.data);
-                console.log('Fetched quizzes:', response.data); // Debugging line
             } catch (error) {
                 console.error('Error fetching quizzes:', error);
             } finally {

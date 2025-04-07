@@ -12,7 +12,7 @@ module.exports = {
                 status: 'published',
                 populate: {
                     questions: {
-                        fields: ['question', 'options', 'isCorrect'],
+                        fields: ['question', 'options', 'isCorrect', 'id'],
                     },
                 },
             });
@@ -25,6 +25,7 @@ module.exports = {
             }
             const questions = question.questions.map((question) => {
                 return {
+                    id: question.id,
                     question: question.question,
                     options: question.options,
                     isCorrect: question.isCorrect,
@@ -34,13 +35,22 @@ module.exports = {
             // devuelve en que pregunta se ha fallado y en que pregunta se ha acertado
             let incorrectAnswersList = [];
             let correctAnswersList = [];
-            questions.forEach((question, index) => {
-                if (question.isCorrect === answers[index]) {
-                    correctAnswersList.push(question.question);
+
+            // recorre las respuestas y las compara con las preguntas y elimina el campo isCorrect
+            answers.forEach((answer) => {
+                const question = questions.find((question) => question.id === answer.questionId);
+                if (!question) {
+                    return;
+                }
+                if (question.isCorrect === answer.answer) {
+                    correctAnswersList.push(question);
+                    correctAnswersList[correctAnswersList.length - 1].isCorrect = undefined;
                 } else {
-                    incorrectAnswersList.push(question.question);
+                    incorrectAnswersList.push(question);
+                    incorrectAnswersList[incorrectAnswersList.length - 1].isCorrect = undefined;
                 }
             });
+            
             return {
                 status: true,
                 message: 'Response validated successfully',
