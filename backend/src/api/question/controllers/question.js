@@ -3,22 +3,20 @@
 module.exports = {
     async validateResponse(ctx) {
         const { documentId } = ctx.params;
-        const { answer } = ctx.request.query;
+        const { answers } = ctx.request.body;
 
         try {
-            const isCorrect = await strapi.service('api::question.question').validateResponse(documentId, answer);
+            const response = await strapi.service('api::question.question').validateResponse(documentId, answers);
 
-            if (!isCorrect.status) {
-                return {
-                    status: false,
-                    message: 'Incorrect answer',
-                }
+            if (!response.status) {
+                return ctx.badRequest(response.message);
             }
 
             return {
                 status: true,
-                message: 'Correct answer',
-            }
+                message: 'Response validated successfully',
+                data: response.data,
+            };
                 
         }catch (error) {
             return {

@@ -5,12 +5,16 @@
  */
 
 module.exports = {
-    async validateResponse(documentId, answer) {
+    async validateResponse(documentId, answers) {
         try {
-            const question = await strapi.documents("api::question.question").findOne({
+            const question = await strapi.documents("api::quiz.quiz").findOne({
                 documentId: documentId,
                 status: 'published',
-                fields: ['isCorrect'],
+                populate: {
+                    questions: {
+                        fields: ['question', 'options', 'isCorrect'],
+                    },
+                },
             });
 
             if (!question) {
@@ -19,18 +23,32 @@ module.exports = {
                     message: 'Question not found',
                 }
             }
-
-            if(question.isCorrect !== answer) {
+            const questions = question.questions.map((question) => {
                 return {
-                    status: false,
-                    message: 'Incorrect answer',
+                    question: question.question,
+                    options: question.options,
+                    isCorrect: question.isCorrect,
                 }
-            }
+            });
 
+            // devuelve en que pregunta se ha fallado y en que pregunta se ha acertado
+            let incorrectAnswersList = [];
+            let correctAnswersList = [];
+            questions.forEach((question, index) => {
+                if (question.isCorrect === answers[index]) {
+                    correctAnswersList.push(question.question);
+                } else {
+                    incorrectAnswersList.push(question.question);
+                }
+            });
             return {
                 status: true,
-                message: 'Correct answer',
-            }
+                message: 'Response validated successfully',
+                data: {
+                    correctAnswers: correctAnswersList,
+                    incorrectAnswers: incorrectAnswersList,
+                },
+            };
         }catch (error) {
             return {
                 status: false,

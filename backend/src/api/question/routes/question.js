@@ -1,8 +1,8 @@
 module.exports = {
     routes: [
         {
-            method: 'GET',
-            path: '/question/:documentId',
+            method: 'POST',
+            path: '/quizzes/:documentId',
             handler: 'question.validateResponse',
             config: {
                 auth: false
