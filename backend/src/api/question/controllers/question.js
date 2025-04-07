@@ -1,9 +1,30 @@
 'use strict';
 
-/**
- * question controller
- */
+module.exports = {
+    async validateResponse(ctx) {
+        const { documentId } = ctx.params;
+        const { answer } = ctx.request.query;
 
-const { createCoreController } = require('@strapi/strapi').factories;
+        try {
+            const isCorrect = await strapi.service('api::question.question').validateResponse(documentId, answer);
 
-module.exports = createCoreController('api::question.question');
+            if (!isCorrect.status) {
+                return {
+                    status: false,
+                    message: 'Incorrect answer',
+                }
+            }
+
+            return {
+                status: true,
+                message: 'Correct answer',
+            }
+                
+        }catch (error) {
+            return {
+                status: false,
+                message: 'Error validating response',
+            }
+        }
+    }
+}

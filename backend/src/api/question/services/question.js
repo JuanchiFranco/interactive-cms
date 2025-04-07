@@ -4,6 +4,38 @@
  * question service
  */
 
-const { createCoreService } = require('@strapi/strapi').factories;
+module.exports = {
+    async validateResponse(documentId, answer) {
+        try {
+            const question = await strapi.documents("api::question.question").findOne({
+                documentId: documentId,
+                status: 'published',
+                fields: ['isCorrect'],
+            });
 
-module.exports = createCoreService('api::question.question');
+            if (!question) {
+                return {
+                    status: false,
+                    message: 'Question not found',
+                }
+            }
+
+            if(question.isCorrect !== answer) {
+                return {
+                    status: false,
+                    message: 'Incorrect answer',
+                }
+            }
+
+            return {
+                status: true,
+                message: 'Correct answer',
+            }
+        }catch (error) {
+            return {
+                status: false,
+                message: 'Error validating response',
+            }
+        }
+    }
+}
