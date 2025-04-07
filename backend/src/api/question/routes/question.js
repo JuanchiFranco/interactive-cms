@@ -1,9 +1,12 @@
-'use strict';
-
-/**
- * question router
- */
-
-const { createCoreRouter } = require('@strapi/strapi').factories;
-
-module.exports = createCoreRouter('api::question.question');
+module.exports = {
+    routes: [
+        {
+            method: 'POST',
+            path: '/quizzes/:documentId',
+            handler: 'question.validateResponse',
+            config: {
+                auth: false
+            }
+        }
+    ]
+}
