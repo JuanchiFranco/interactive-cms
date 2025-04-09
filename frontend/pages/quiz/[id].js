@@ -6,65 +6,48 @@ import Loading from '@/components/Loading';
 const Quiz = () => {
   const router = useRouter();
   const { id } = router.query;
+
   const [quiz, setQuiz] = useState(null);
-  const [answers, setAnswers] = useState([]);
+  const [answers, setAnswers] = useState([]); // { questionId, answer }
+  const [submitted, setSubmitted] = useState(false);
+  const [correctAnswers, setCorrectAnswers] = useState([]);   // [{ questionId, answer }]
+  const [incorrectAnswers, setIncorrectAnswers] = useState([]); // [{ questionId, answer }]
 
   useEffect(() => {
     if (!id) return;
-    const fetchQuiz = async () => {
-      try {
-        const res = await API.get(`/quizzes/${id}?populate=questions`);
-        setQuiz(res.data);
-      } catch (error) {
-        console.error('Error al cargar el quiz:', error);
-      }
-    };
-    fetchQuiz();
+    API.get(`/quizzes/${id}?populate=questions`)
+      .then(res => setQuiz(res.data))
+      .catch(err => console.error('Error al cargar el quiz:', err));
   }, [id]);
 
   const handleAnswer = (questionId, answer) => {
-    // Actualizamos el estado de las respuestas, en este formato: [{ questionId: questionId, answer: answer }, { questionId: questionId, answer: answer }, etc.]
-    setAnswers((prevAnswers) => {
-      const existingAnswerIndex = prevAnswers.findIndex(
-        (item) => item.questionId === questionId
-      );
-      if (existingAnswerIndex !== -1) {
-        const updatedAnswers = [...prevAnswers];
-        updatedAnswers[existingAnswerIndex].answer = answer;
-        return updatedAnswers;
-      } else {
-        return [...prevAnswers, { questionId, answer }];
+    setAnswers(prev => {
+      const idx = prev.findIndex(a => a.questionId === questionId);
+      if (idx !== -1) {
+        const copy = [...prev];
+        copy[idx].answer = answer;
+        return copy;
       }
+      return [...prev, { questionId, answer }];
     });
   };
 
   const handleSubmit = async () => {
-    // Validate answers before submitting
-    if (Object.keys(answers).length !== quiz.questions.length) {
+    if (answers.length !== quiz.questions.length) {
       alert('Por favor, responde todas las preguntas.');
       return;
     }
-
-    // hacemos una petición POST a la API para enviar las respuestas
     try {
-      const response = await API.post(`/quizzes/${id}`, {
-        answers: answers.map((item) => ({
-          questionId: item.questionId,
-          answer: item.answer,
-        })),
+      const { data } = await API.post(`/quizzes/${id}`, {
+        answers: answers.map(a => ({ questionId: a.questionId, answer: a.answer })),
       });
-      if (!response.data) {
-        alert('Error al enviar respuestas. Por favor, inténtalo de nuevo.');
-        return;
-      }
-      let { correctAnswers, incorrectAnswers } = response.data.data;
-      // Calculamos la puntuación
-      let score = correctAnswers.length;
-      let incorrectScore = incorrectAnswers.length;
-      // Mostramos la puntuación al usuario en un alert
-      alert(`Puntuación: ${score} respuestas correctas y ${incorrectScore} incorrectas.`);
-    } catch (error) {
-      console.error('Error al enviar respuestas:', error);
+      setCorrectAnswers(data.data.correctAnswers);
+      setIncorrectAnswers(data.data.incorrectAnswers);
+
+      setSubmitted(true);
+      alert(`Puntuación: ${data.data.correctAnswers.length} correctas, ${data.data.incorrectAnswers.length} incorrectas.`);
+    } catch (err) {
+      console.error('Error al enviar respuestas:', err);
     }
   };
 
@@ -76,36 +59,54 @@ const Quiz = () => {
       {quiz.questions.length === 0 ? (
         <p>No hay preguntas disponibles.</p>
       ) : (
-        // mapeamos las preguntas y opciones
         <div>
-            {quiz.questions.map((question) => (
-                <div key={question.id} className="mb-4 p-4 border rounded">
-                <h2 className="text-xl font-semibold mb-2">
-                    {question.question}
-                </h2>
-                {question.options.map((option, index) => (
-                    <label key={index} className="block">
-                    <input
+          {quiz.questions.map(question => {
+            const userObj = answers.find(a => a.questionId === question.id);
+            const userAnswer = userObj?.answer;
+            const correctObj = correctAnswers.find(c => c.id === question.id);
+          
+            const correctAnswer = correctObj?.answer;
+
+            return (
+              <div key={question.id} className="mb-4 p-4 border rounded">
+                <h2 className="text-xl font-semibold mb-2">{question.question}</h2>
+                {question.options.map((option, idx) => {
+                  let classes = 'block p-2 rounded mb-1 ';
+                  if (submitted) {
+                    if (correctObj) {
+                      // siempre marcamos la correcta en verde
+                      classes += 'bg-green-200';
+                    } else if (option === userAnswer) {
+                      // si el usuario la escogió y no es la correcta, la pintamos de rojo
+                      classes += 'bg-red-200';
+                    }
+                  }
+                  return (
+                    <label key={idx} className={classes}>
+                      <input
                         type="radio"
                         name={`question-${question.id}`}
                         value={option}
                         onChange={() => handleAnswer(question.id, option)}
+                        checked={userAnswer === option}
                         className="mr-2"
-                    />
-                    {option}
+                      />
+                      {option}
                     </label>
-                ))}
-                </div>
-            ))}
-            <div className="flex items-center justify-center">
-                <button
-                    onClick={handleSubmit}
-                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
-                >
-                    Enviar Respuestas
-                </button>
-            </div>
-            
+                  );
+                })}
+              </div>
+            );
+          })}
+
+          <div className="flex items-center justify-center">
+            <button
+              onClick={handleSubmit}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+            >
+              {submitted ? 'Revisar de nuevo' : 'Enviar Respuestas'}
+            </button>
+          </div>
         </div>
       )}
     </div>
