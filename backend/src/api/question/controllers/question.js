@@ -19,8 +19,6 @@ module.exports = {
         if (answers.some(answer => !answer.questionId || answer.answer === undefined)) {
             return ctx.badRequest('Each answer must have a questionId and an answer');
         }
-        console.log('documentId', documentId);
-        console.log('answers', answers);
         
 
         try {
